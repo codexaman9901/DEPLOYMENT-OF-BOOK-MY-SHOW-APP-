@@ -1,81 +1,114 @@
-# 🚀 **DevOps Project: Book My Show App Deployment**  
+# 🚀 DevOps Project: Book My Show Clone App Deployment
 
-Welcome to the **Book My Show App Deployment** project! This project demonstrates how to deploy a **Book My Show-clone application** using modern DevOps tools and practices, following a **DevSecOps** approach.  
+Welcome to the Book My Show Clone App Deployment project! This project demonstrates a robust DevOps pipeline for deploying a Book My Show clone application using modern tools and practices, following a DevSecOps approach. It includes containerization with Docker, orchestration with Amazon EKS (Elastic Kubernetes Service), CI/CD with Jenkins, infrastructure-as-code (IaC) with Terraform, and monitoring with Prometheus and Grafana.
 
----
+## 🛠️ Tools & Services Used
 
-## 🛠️ **Tools & Services Used**
+| Category            | Tools/Services                              |
+|---------------------|---------------------------------------------|
+| Version Control     | GitHub                                      |
+| CI/CD               | Jenkins                                     |
+| Infrastructure-as-Code (IaC) | Terraform                           |
+| Containerization    | Docker                                      |
+| Orchestration       | Kubernetes, Amazon EKS, Helm                 |
+| Monitoring          | Prometheus, Grafana                         |
+| Security            | SonarQube, Trivy, OWASP                     |
+| Cloud               | AWS (EKS, EC2), AWS CLI                     |
+| Scripting           | Bash, YAML                                  |
 
-| **Category**       | **Tools**                                                                                                                                                                                                 |
-|---------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Version Control** | ![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat-square&logo=github&logoColor=white)                                                                                                       |
-| **CI/CD**           | ![Jenkins](https://img.shields.io/badge/Jenkins-D24939?style=flat-square&logo=jenkins&logoColor=white)                                                                                                    |
-| **Code Quality**    | ![SonarQube](https://img.shields.io/badge/SonarQube-4E9BCD?style=flat-square&logo=sonarqube&logoColor=white)                                                                                              |
-| **Containerization**| ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)                                                                                                       |
-| **Orchestration**   | ![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=flat-square&logo=kubernetes&logoColor=white)                                                                                          |
-| **Monitoring**      | ![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=flat-square&logo=prometheus&logoColor=white) ![Grafana](https://img.shields.io/badge/Grafana-F46800?style=flat-square&logo=grafana&logoColor=white) |
-| **Security**        | ![OWASP](https://img.shields.io/badge/OWASP-000000?style=flat-square&logo=owasp&logoColor=white) ![Trivy](https://img.shields.io/badge/Trivy-00979D?style=flat-square&logo=trivy&logoColor=white)         |
+## 🚦 Project Stages
 
----
+### Part I: Docker Deployment
 
-## 🚦 **Project Stages**
+#### Step 1: Basic Setup
+- **Launch VM**: Ubuntu 24.04, t2.large, 28 GB, named `BMS-Server`.
+- **Security Group Configuration**:
+  - SMTP: TCP 25
+  - Custom TCP: 3000-10000 (Node.js, Grafana, Jenkins, etc.)
+  - HTTP: TCP 80
+  - HTTPS: TCP 443
+  - SSH: TCP 22
+  - Custom TCP: 6443 (Kubernetes API)
+  - SMTPS: TCP 465
+  - Custom TCP: 30000-32767 (Kubernetes NodePort)
+- **IAM User Creation**:
+  - Attached policies: `AmazonEC2FullAccess`, `AmazonEKS_CNI_Policy`, `AmazonEKSClusterPolicy`, `AmazonEKSWorkerNodePolicy`, `AWSCloudFormationFullAccess`, `IAMFullAccess`.
+  - Inline policy: `eks:*` actions.
+  - Generated Access and Secret Keys.
+- **EKS Cluster Creation**:
+  1. Installed AWS CLI, `kubectl`, and `eksctl`.
+  2. Created EKS cluster with `eksctl`:
+     - Command: `eksctl create cluster --name=aman-eks --region=us-east-1 --zones=us-east-1a,us-east-1b --version=1.30 --without-nodegroup`.
+     - Associated IAM OIDC provider: `eksctl utils associate-iam-oidc-provider --region us-east-1 --cluster kastro-eks --approve`.
+     - Created node group: `eksctl create nodegroup --cluster=amank-eks --region=us-east-1 --name=node2 --node-type=t3.medium --nodes=3 --nodes-min=2 --nodes-max=4 --node-volume-size=20 --ssh-access --ssh-public-key=BMS-key --managed --asg-access --external-dns-access --full-ecr-access --appmesh-access --alb-ingress-access`.
 
-### **Phase 1: Deployment to Docker Container**
-- Containerize the application using Docker.
-- Build and push Docker images to a container registry.
-- Run the application in a Docker container.
+#### Step 2: Tools Installation
+- **Jenkins Setup**:
+  - Installed Java 17 and Jenkins using scripts (`Jenkins.sh`).
+  - Opened port 8080, accessed Jenkins, and configured plugins (e.g., SonarQube Scanner, Docker, Kubernetes).
+- **Docker Setup**:
+  - Installed Docker using `docker.sh`, pulled `hello-world` image, and logged into DockerHub.
+- **Trivy Setup**:
+  - Installed Trivy using `trivy.sh` for filesystem and container vulnerability scanning.
+- **SonarQube Setup**:
+  - Ran `docker run -d --name sonar -p 9000:9000 sonarqube:lts-community` and configured with default credentials (`admin`).
 
-### **Phase 2: Deployment to EKS Cluster with Monitoring**
-- Deploy the application to an **Amazon EKS (Elastic Kubernetes Service)** cluster.
-- Set up **Prometheus** and **Grafana** for monitoring and visualization.
-- Implement **Trivy** for vulnerability scanning and **OWASP** for security best practices.
+#### Step 3: Access Jenkins Dashboard
+- Installed plugins: Eclipse Temurin Installer, SonarQube Scanner, NodeJS, Docker-related plugins, OWASP Dependency Check, Pipeline Stage View, Email Extension, Kubernetes plugins.
+- Configured SonarQube token (`squ_69eb05b41575c699579c6ced901eaafae66d63a2`) and credentials.
 
----
+#### Step 4: Email Integration
+- Configured Gmail app password in Jenkins for SMTP notifications (smtp.gmail.com:465, SSL enabled).
+- Set up email triggers for build success/failure.
 
-## 📂 **Code Repository**
-Explore the code and contribute to the project:  
-[![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/KastroVKiran/Book-My-Show.git)
+#### Step 5: Create Pipeline Job
+- **Pipeline Script (Without K8S)**:
+  - Cleaned workspace, checked out GitHub code, ran SonarQube analysis, installed dependencies, performed Trivy FS scan, built and pushed Docker image (`Amank438/bms:latest`), and deployed to a container on port 3000.
+  - Sent email notifications with logs and `trivyfs.txt`.
+- **Pipeline Script (With K8S)**:
+  - Added EKS deployment stage: Configured `kubectl` with `aws eks update-kubeconfig`, applied `deployment.yml` and `service.yml`, and verified pods/services.
 
----
+### Part II: Kubernetes Deployment & Monitoring
 
-## 📹 **Project Video**
-Watch the step-by-step deployment process:  
-[![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/hBGVwa8MY4A)
+#### Step 6: Monitoring the Application
+- **Prometheus Setup** (Monitoring Server, Ubuntu 22.04, t2.medium):
+  - Created `prometheus` system user.
+  - Downloaded and installed Prometheus 2.47.1, configured systemd service (`/etc/systemd/system/prometheus.service`), and opened port 9090.
+  - Installed Node Exporter 1.6.1, configured systemd service (`/etc/systemd/system/node_exporter.service`), and opened port 9100.
+  - Updated `prometheus.yml` with jobs for `node_exporter` (`<MonitoringVMip>:9100`) and `jenkins` (`<your-jenkins-ip>:<your-jenkins-port>/prometheus`).
+- **Grafana Setup** (Monitoring Server):
+  - Installed Grafana, enabled service, and accessed via port 3000.
+  - Added data source (Prometheus) and dashboards (Node Exporter: ID 1860, Jenkins: ID 9964).
 
----
+## 📂 Code Repository
 
-## 📺 **Docker Playlist**
-Learn more about Docker with this playlist:  
-[![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/playlist?list=PLs-PsDpuAuTeNx3OgGQ1QrpNBo-XE6VBh)
+Explore the code and contribute to the project:
+- [GitHub Repository](https://github.com/codexaman9901/DEPLOYMENT-OF-BOOK-MY-SHOW-APP)
 
----
 
-## 🚀 **Other DevOps Projects**
 
-| **Project**                                | **Video Link**                                                                                   |
-|--------------------------------------------|--------------------------------------------------------------------------------------------------|
-| **SWIGGY App Project**                     | [![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=flat-square&logo=youtube&logoColor=white)](https://youtu.be/x55z7rk0NAU) |
-| **Zomato App Project**                     | [![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=flat-square&logo=youtube&logoColor=white)](https://youtu.be/GyoI6-I68aQ) |
-| **Jenkins + Terraform + EKS Integration**  | [![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=flat-square&logo=sonarqube&logoColor=white)](https://youtu.be/DV79JyFbQE8) |
-| **AWS 3 Tier Architecture Project**        | [![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=flat-square&logo=nexus&logoColor=white)](https://youtu.be/Oj-Hr_aulKA) |
+## 🚀 How to Run
 
----
+1. **Prerequisites**:
+   - AWS account with IAM user and Access/Secret Keys.
+   - EC2 instance (`BMS-Server` and `Monitoring Server`) with Ubuntu 22.04/24.04.
+   - DockerHub account and Jenkins setup.
 
-## 🤝 **Connect with Me**
+2. **Setup**:
+   - Launch VMs, configure security groups, and install tools (AWS CLI, `kubectl`, `eksctl`, Jenkins, Docker, Trivy, SonarQube).
+   - Create EKS cluster and node group using `eksctl`.
+   - Configure Jenkins pipeline with the provided script.
 
-Let's connect and discuss DevOps!  
+3. **Deployment**:
+   - Run the Jenkins pipeline (select `apply` for creation, `destroy` to clean up).
+   - Access the app via `BMS-Server` public IP on port 3000 or EKS service endpoint.
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/kastro-kiran/)  
-[![WhatsApp](https://img.shields.io/badge/WhatsApp-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://chat.whatsapp.com/EGw6ZlwUHZc82cA0vXFnwm)
+4. **Monitoring**:
+   - Access Prometheus at `<MonitoringVMip>:9090` and Grafana at `<MonitoringVMip>:3000`.
 
----
+5. **Cleanup**:
+   - Terminate EC2 instances and delete EKS resources after testing.
 
-## 📣 **Feedback Request**
 
-After deploying the app, share your feedback on LinkedIn! Tag me and include the project link to help spread the word.  
 
----
 
-## 🎉 **Happy Learning!**  
-
-**KASTRO KIRAN V**
